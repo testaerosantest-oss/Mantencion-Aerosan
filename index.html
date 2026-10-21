@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="es">
 <head>
@@ -9,7 +10,8 @@
   <script defer src="app.js"></script>
 </head>
 <body>
-  <main id="loginView" class="login-wrap">
+  <!-- Login oculto temporalmente -->
+  <main id="loginView" class="login-wrap hidden">
     <section class="login-card">
       <div class="brand-mark">A</div>
       <p class="eyebrow">AEROSAN · MANTENIMIENTO</p>
@@ -17,9 +19,9 @@
       <p class="muted">Ingresa tus credenciales para continuar.</p>
       <form id="loginForm">
         <label for="username">Usuario</label>
-        <input id="username" name="username" autocomplete="username" required value="">
+        <input id="username" name="username" autocomplete="username" value="">
         <label for="password">Contraseña</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <input id="password" name="password" type="password" autocomplete="current-password">
         <button class="primary full" type="submit">Ingresar</button>
         <p id="loginError" class="error" role="alert"></p>
       </form>
@@ -27,59 +29,193 @@
     </section>
   </main>
 
-  <div id="appView" class="app-shell hidden">
+  <!-- Panel visible al entrar -->
+  <div id="appView" class="app-shell">
     <aside class="sidebar">
-      <div class="sidebar-brand"><span class="brand-mark small-mark">A</span><div><b>SRM Aerosan</b><small>Mantenimiento</small></div></div>
+      <div class="sidebar-brand">
+        <span class="brand-mark small-mark">A</span>
+        <div><b>SRM Aerosan</b><small>Mantenimiento</small></div>
+      </div>
+
       <p class="nav-label">MENÚ PRINCIPAL</p>
       <button class="nav-item active" data-section="dashboard">▦ <span>Inicio</span></button>
       <button class="nav-item" data-section="equipos">▣ <span>Equipos</span></button>
       <button class="nav-item" data-section="mantenciones">◷ <span>Mantenciones</span></button>
       <button class="nav-item" data-section="ordenes">☷ <span>Órdenes de trabajo</span></button>
       <button class="nav-item" data-section="reportes">▥ <span>Reportes</span></button>
-      <div class="sidebar-bottom"><span id="currentUser">Usuario</span><button id="logoutBtn" class="logout">Cerrar sesión</button></div>
+
+      <div class="sidebar-bottom">
+        <span id="currentUser">Modo de prueba</span>
+        <button id="logoutBtn" class="logout hidden" type="button">Cerrar sesión</button>
+      </div>
     </aside>
 
     <section class="main-area">
-      <header class="topbar"><div><p class="eyebrow">PLATAFORMA DE MANTENIMIENTO</p><h1 id="pageTitle">Inicio</h1></div><span class="status-pill">● Sistema SRM</span></header>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PLATAFORMA DE MANTENIMIENTO</p>
+          <h1 id="pageTitle">Inicio</h1>
+        </div>
+        <span class="status-pill">● Sistema SRM</span>
+      </header>
+
       <div id="notice" class="notice hidden"></div>
 
       <section id="section-dashboard" class="page-section">
-        <div class="welcome"><div><p class="eyebrow light">PANEL DE CONTROL</p><h2>Bienvenido a Mantenimiento Aerosan</h2><p>Administra equipos, mantenciones y órdenes de trabajo desde un solo lugar.</p></div><div class="welcome-icon">⚙</div></div>
-        <div class="stats-grid">
-          <article class="stat-card"><span>Total de equipos</span><strong id="statEquipos">—</strong><small>Registrados en la base de datos</small></article>
-          <article class="stat-card"><span>Operativos</span><strong id="statOperativos">—</strong><small>Estado operativo</small></article>
-          <article class="stat-card"><span>En mantención</span><strong id="statMantencion">—</strong><small>Requieren seguimiento</small></article>
-          <article class="stat-card"><span>Órdenes abiertas</span><strong id="statOrdenes">—</strong><small>Pendientes o en proceso</small></article>
+        <div class="welcome">
+          <div>
+            <p class="eyebrow light">PANEL DE CONTROL</p>
+            <h2>Bienvenido a Mantenimiento Aerosan</h2>
+            <p>Administra equipos, mantenciones y órdenes de trabajo desde un solo lugar.</p>
+          </div>
+          <div class="welcome-icon">⚙</div>
         </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span>Total de equipos</span><strong id="statEquipos">—</strong>
+            <small>Registrados en la base de datos</small>
+          </article>
+          <article class="stat-card">
+            <span>Operativos</span><strong id="statOperativos">—</strong>
+            <small>Estado operativo</small>
+          </article>
+          <article class="stat-card">
+            <span>En mantención</span><strong id="statMantencion">—</strong>
+            <small>Requieren seguimiento</small>
+          </article>
+          <article class="stat-card">
+            <span>Órdenes abiertas</span><strong id="statOrdenes">—</strong>
+            <small>Pendientes o en proceso</small>
+          </article>
+        </div>
+
         <h3>Accesos directos</h3>
         <div class="quick-grid">
-          <a id="linkSolicitudes" class="quick-card" target="_blank" rel="noopener"><span class="quick-icon blue">▤</span><div><b>SRM Solicitudes</b><small>Abrir gestión de solicitudes</small></div><span class="external">↗</span></a>
-          <a id="linkConsumos" class="quick-card" target="_blank" rel="noopener"><span class="quick-icon orange">▣</span><div><b>SRM Consumos</b><small>Abrir gestión de consumos</small></div><span class="external">↗</span></a>
-          <a id="linkBaseDatos" class="quick-card" target="_blank" rel="noopener"><span class="quick-icon purple">▦</span><div><b>SRM Base de datos</b><small>Abrir base de datos</small></div><span class="external">↗</span></a>
+          <a id="linkSolicitudes" class="quick-card" target="_blank" rel="noopener">
+            <span class="quick-icon blue">▤</span>
+            <div><b>SRM Solicitudes</b><small>Abrir gestión de solicitudes</small></div>
+            <span class="external">↗</span>
+          </a>
+          <a id="linkConsumos" class="quick-card" target="_blank" rel="noopener">
+            <span class="quick-icon orange">▣</span>
+            <div><b>SRM Consumos</b><small>Abrir gestión de consumos</small></div>
+            <span class="external">↗</span>
+          </a>
+          <a id="linkBaseDatos" class="quick-card" target="_blank" rel="noopener">
+            <span class="quick-icon purple">▦</span>
+            <div><b>SRM Base de datos</b><small>Abrir base de datos</small></div>
+            <span class="external">↗</span>
+          </a>
         </div>
-        <div class="section-heading"><div><h3>Equipos recientes</h3><p class="muted">Información cargada desde Azure SQL</p></div><button class="secondary" data-go="equipos">Ver todos los equipos →</button></div>
-        <div class="table-wrap"><table><thead><tr><th>N.º equipo</th><th>Equipo</th><th>Ubicación</th><th>Estado</th><th>Próxima mantención</th></tr></thead><tbody id="recentEquipment"><tr><td colspan="5">Cargando equipos…</td></tr></tbody></table></div>
+
+        <div class="section-heading">
+          <div>
+            <h3>Equipos recientes</h3>
+            <p class="muted">Información cargada desde Azure SQL</p>
+          </div>
+          <button class="secondary" data-go="equipos">Ver todos los equipos →</button>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>N.º equipo</th><th>Equipo</th><th>Ubicación</th>
+                <th>Estado</th><th>Próxima mantención</th>
+              </tr>
+            </thead>
+            <tbody id="recentEquipment">
+              <tr><td colspan="5">Cargando equipos…</td></tr>
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section id="section-equipos" class="page-section hidden">
-        <div class="section-heading"><div><h2>Inventario de equipos</h2><p class="muted">Crea y administra el inventario técnico.</p></div><button id="newEquipmentBtn" class="primary">＋ Nuevo equipo</button></div>
-        <div class="filters"><input id="equipmentSearch" placeholder="Buscar por número, nombre o ubicación…"><select id="statusFilter"><option value="">Todos los estados</option><option>Operativo</option><option>En mantención</option><option>Fuera de servicio</option><option>Retirado</option></select></div>
-        <div class="table-wrap"><table><thead><tr><th>N.º equipo</th><th>Nombre</th><th>Marca / Modelo</th><th>Ubicación</th><th>Estado</th><th>Próxima mantención</th><th></th></tr></thead><tbody id="equipmentRows"></tbody></table></div>
+        <div class="section-heading">
+          <div>
+            <h2>Inventario de equipos</h2>
+            <p class="muted">Crea y administra el inventario técnico.</p>
+          </div>
+          <button id="newEquipmentBtn" class="primary">＋ Nuevo equipo</button>
+        </div>
+        <div class="filters">
+          <input id="equipmentSearch" placeholder="Buscar por número, nombre o ubicación…">
+          <select id="statusFilter">
+            <option value="">Todos los estados</option>
+            <option>Operativo</option>
+            <option>En mantención</option>
+            <option>Fuera de servicio</option>
+            <option>Retirado</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>N.º equipo</th><th>Nombre</th><th>Marca / Modelo</th>
+                <th>Ubicación</th><th>Estado</th><th>Próxima mantención</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="equipmentRows"></tbody>
+          </table>
+        </div>
       </section>
 
       <section id="section-mantenciones" class="page-section hidden">
-        <div class="section-heading"><div><h2>Plan de mantenciones</h2><p class="muted">Planificación e historial preventivo y correctivo.</p></div><button id="newMaintenanceBtn" class="primary">＋ Nueva mantención</button></div>
-        <div class="table-wrap"><table><thead><tr><th>Equipo</th><th>Tipo</th><th>Fecha programada</th><th>Fecha realizada</th><th>Estado</th><th>Detalle</th></tr></thead><tbody id="maintenanceRows"></tbody></table></div>
+        <div class="section-heading">
+          <div>
+            <h2>Plan de mantenciones</h2>
+            <p class="muted">Planificación e historial preventivo y correctivo.</p>
+          </div>
+          <button id="newMaintenanceBtn" class="primary">＋ Nueva mantención</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Equipo</th><th>Tipo</th><th>Fecha programada</th>
+                <th>Fecha realizada</th><th>Estado</th><th>Detalle</th>
+              </tr>
+            </thead>
+            <tbody id="maintenanceRows"></tbody>
+          </table>
+        </div>
       </section>
 
       <section id="section-ordenes" class="page-section hidden">
-        <div class="section-heading"><div><h2>Órdenes de trabajo</h2><p class="muted">Seguimiento de trabajos pendientes y realizados.</p></div><button id="newOrderBtn" class="primary">＋ Nueva orden</button></div>
-        <div class="table-wrap"><table><thead><tr><th>N.º orden</th><th>Equipo</th><th>Descripción</th><th>Prioridad</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="orderRows"></tbody></table></div>
+        <div class="section-heading">
+          <div>
+            <h2>Órdenes de trabajo</h2>
+            <p class="muted">Seguimiento de trabajos pendientes y realizados.</p>
+          </div>
+          <button id="newOrderBtn" class="primary">＋ Nueva orden</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>N.º orden</th><th>Equipo</th><th>Descripción</th>
+                <th>Prioridad</th><th>Estado</th><th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="orderRows"></tbody>
+          </table>
+        </div>
       </section>
 
       <section id="section-reportes" class="page-section hidden">
-        <h2>Reportes</h2><p class="muted">Resumen calculado desde los registros de equipos y órdenes.</p>
-        <div class="stats-grid"><article class="stat-card"><span>Equipos fuera de servicio</span><strong id="reportFuera">—</strong></article><article class="stat-card"><span>Órdenes completadas</span><strong id="reportCompletadas">—</strong></article></div>
+        <h2>Reportes</h2>
+        <p class="muted">Resumen calculado desde los registros de equipos y órdenes.</p>
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span>Equipos fuera de servicio</span><strong id="reportFuera">—</strong>
+          </article>
+          <article class="stat-card">
+            <span>Órdenes completadas</span><strong id="reportCompletadas">—</strong>
+          </article>
+        </div>
         <p class="muted">Los indicadores se actualizarán al conectar la API con Azure SQL.</p>
       </section>
     </section>
@@ -87,35 +223,94 @@
 
   <dialog id="equipmentDialog">
     <form id="equipmentForm" method="dialog">
-      <div class="dialog-heading"><div><p class="eyebrow">INVENTARIO</p><h2 id="equipmentDialogTitle">Nuevo equipo</h2></div><button type="button" class="icon-button" data-close="equipmentDialog">×</button></div>
+      <div class="dialog-heading">
+        <div><p class="eyebrow">INVENTARIO</p><h2 id="equipmentDialogTitle">Nuevo equipo</h2></div>
+        <button type="button" class="icon-button" data-close="equipmentDialog">×</button>
+      </div>
       <input type="hidden" id="equipmentId">
-      <label for="eqNumber">Número de equipo *</label><input id="eqNumber" required maxlength="50">
-      <label for="eqName">Nombre del equipo *</label><input id="eqName" required maxlength="150">
-      <div class="form-grid"><div><label for="eqBrand">Marca</label><input id="eqBrand"></div><div><label for="eqModel">Modelo</label><input id="eqModel"></div></div>
+      <label for="eqNumber">Número de equipo *</label>
+      <input id="eqNumber" required maxlength="50">
+      <label for="eqName">Nombre del equipo *</label>
+      <input id="eqName" required maxlength="150">
+      <div class="form-grid">
+        <div><label for="eqBrand">Marca</label><input id="eqBrand"></div>
+        <div><label for="eqModel">Modelo</label><input id="eqModel"></div>
+      </div>
       <label for="eqLocation">Ubicación</label><input id="eqLocation">
-      <div class="form-grid"><div><label for="eqStatus">Estado</label><select id="eqStatus"><option>Operativo</option><option>En mantención</option><option>Fuera de servicio</option><option>Retirado</option></select></div><div><label for="eqNext">Próxima mantención</label><input id="eqNext" type="date"></div></div>
+      <div class="form-grid">
+        <div>
+          <label for="eqStatus">Estado</label>
+          <select id="eqStatus">
+            <option>Operativo</option><option>En mantención</option>
+            <option>Fuera de servicio</option><option>Retirado</option>
+          </select>
+        </div>
+        <div><label for="eqNext">Próxima mantención</label><input id="eqNext" type="date"></div>
+      </div>
       <label for="eqNotes">Observaciones</label><textarea id="eqNotes" rows="3"></textarea>
-      <p id="equipmentFormError" class="error"></p><div class="dialog-actions"><button type="button" class="secondary" data-close="equipmentDialog">Cancelar</button><button type="submit" class="primary">Guardar equipo</button></div>
+      <p id="equipmentFormError" class="error"></p>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close="equipmentDialog">Cancelar</button>
+        <button type="submit" class="primary">Guardar equipo</button>
+      </div>
     </form>
   </dialog>
 
   <dialog id="maintenanceDialog">
     <form id="maintenanceForm" method="dialog">
-      <div class="dialog-heading"><div><p class="eyebrow">PLANIFICACIÓN</p><h2>Nueva mantención</h2></div><button type="button" class="icon-button" data-close="maintenanceDialog">×</button></div>
-      <label for="maintenanceEquipment">Equipo *</label><select id="maintenanceEquipment" required></select>
-      <div class="form-grid"><div><label for="maintenanceType">Tipo</label><select id="maintenanceType"><option>Preventiva</option><option>Correctiva</option><option>Inspección</option></select></div><div><label for="maintenanceDate">Fecha programada *</label><input id="maintenanceDate" type="date" required></div></div>
+      <div class="dialog-heading">
+        <div><p class="eyebrow">PLANIFICACIÓN</p><h2>Nueva mantención</h2></div>
+        <button type="button" class="icon-button" data-close="maintenanceDialog">×</button>
+      </div>
+      <label for="maintenanceEquipment">Equipo *</label>
+      <select id="maintenanceEquipment" required></select>
+      <div class="form-grid">
+        <div>
+          <label for="maintenanceType">Tipo</label>
+          <select id="maintenanceType">
+            <option>Preventiva</option><option>Correctiva</option><option>Inspección</option>
+          </select>
+        </div>
+        <div><label for="maintenanceDate">Fecha programada *</label><input id="maintenanceDate" type="date" required></div>
+      </div>
       <label for="maintenanceDetail">Detalle</label><textarea id="maintenanceDetail" rows="3"></textarea>
-      <p id="maintenanceFormError" class="error"></p><div class="dialog-actions"><button type="button" class="secondary" data-close="maintenanceDialog">Cancelar</button><button type="submit" class="primary">Guardar mantención</button></div>
+      <p id="maintenanceFormError" class="error"></p>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close="maintenanceDialog">Cancelar</button>
+        <button type="submit" class="primary">Guardar mantención</button>
+      </div>
     </form>
   </dialog>
 
   <dialog id="orderDialog">
     <form id="orderForm" method="dialog">
-      <div class="dialog-heading"><div><p class="eyebrow">TRABAJO</p><h2>Nueva orden de trabajo</h2></div><button type="button" class="icon-button" data-close="orderDialog">×</button></div>
-      <label for="orderEquipment">Equipo *</label><select id="orderEquipment" required></select>
-      <label for="orderDescription">Descripción *</label><textarea id="orderDescription" rows="3" required></textarea>
-      <div class="form-grid"><div><label for="orderPriority">Prioridad</label><select id="orderPriority"><option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option></select></div><div><label for="orderStatus">Estado</label><select id="orderStatus"><option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Cancelada</option></select></div></div>
-      <p id="orderFormError" class="error"></p><div class="dialog-actions"><button type="button" class="secondary" data-close="orderDialog">Cancelar</button><button type="submit" class="primary">Guardar orden</button></div>
+      <div class="dialog-heading">
+        <div><p class="eyebrow">TRABAJO</p><h2>Nueva orden de trabajo</h2></div>
+        <button type="button" class="icon-button" data-close="orderDialog">×</button>
+      </div>
+      <label for="orderEquipment">Equipo *</label>
+      <select id="orderEquipment" required></select>
+      <label for="orderDescription">Descripción *</label>
+      <textarea id="orderDescription" rows="3" required></textarea>
+      <div class="form-grid">
+        <div>
+          <label for="orderPriority">Prioridad</label>
+          <select id="orderPriority">
+            <option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option>
+          </select>
+        </div>
+        <div>
+          <label for="orderStatus">Estado</label>
+          <select id="orderStatus">
+            <option>Pendiente</option><option>En proceso</option><option>Completada</option><option>Cancelada</option>
+          </select>
+        </div>
+      </div>
+      <p id="orderFormError" class="error"></p>
+      <div class="dialog-actions">
+        <button type="button" class="secondary" data-close="orderDialog">Cancelar</button>
+        <button type="submit" class="primary">Guardar orden</button>
+      </div>
     </form>
   </dialog>
 </body>
