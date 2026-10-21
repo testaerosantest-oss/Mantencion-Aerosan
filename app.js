@@ -115,15 +115,17 @@
       const url = cfg.LINKS?.[key] || "#";
       el.href = url;
 
-      if (!/^https?:\/\//i.test(url)) {
-        el.addEventListener("click", e => {
-          e.preventDefault();
-          showNotice(
-            `Configura la URL real para ${el.querySelector("b")?.textContent || key}.`,
-            true
-          );
-        });
-      }
+     
+if (!url || url === "#") {
+  el.addEventListener("click", e => {
+    e.preventDefault();
+    showNotice(
+      `Todavía falta configurar la URL de ${el.querySelector("b")?.textContent || key}.`,
+      true
+    );
+  });
+}
+
     });
   }
 
