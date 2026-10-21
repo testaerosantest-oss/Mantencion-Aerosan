@@ -2,7 +2,7 @@
   "name": "srm-aerosan-api",
   "version": "1.0.0",
   "private": true,
-  "main": "src/functions/estado.js",
+  "main": "src/functions/*.js",
   "scripts": {
     "start": "func start"
   },
