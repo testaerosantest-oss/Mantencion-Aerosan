@@ -1,4 +1,3 @@
-
 const { app } = require('@azure/functions');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
@@ -28,8 +27,7 @@ app.http('login', {
           SELECT UsuarioId, NombreUsuario, NombreCompleto,
                  PasswordHash, Rol
           FROM dbo.Usuarios
-          WHERE NombreUsuario = @username
-            AND Activo = 1
+          WHERE NombreUsuario = @username AND Activo = 1
         `);
 
       if (result.recordset.length === 0) {
@@ -52,9 +50,6 @@ app.http('login', {
         };
       }
 
-      // Temporal: token aleatorio para establecer la sesión.
-      // La validación de este token en las demás rutas se implementará
-      // en un paso posterior.
       const token = crypto.randomBytes(32).toString('hex');
 
       context.log(`Inicio de sesión correcto para UsuarioId ${user.UsuarioId}`);
@@ -72,7 +67,9 @@ app.http('login', {
       context.error('Error en el inicio de sesión:', error.message);
       return {
         status: 500,
-        jsonBody: { error: 'No se pudo iniciar sesión. Revisa la configuración de la API.' }
+        jsonBody: {
+          error: 'No se pudo iniciar sesión. Revisa la configuración de la API.'
+        }
       };
     }
   }
