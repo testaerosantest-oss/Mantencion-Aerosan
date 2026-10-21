@@ -1,0 +1,4 @@
+
+# Dependencias y archivos locales de Azure Functions
+api/node_modules/
+api/local.settings.json
