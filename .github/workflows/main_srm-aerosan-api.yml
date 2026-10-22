@@ -23,6 +23,26 @@ jobs:
       - name: Descargar codigo
         uses: actions/checkout@v4
 
+      - name: Diagnosticar estructura del repositorio
+        run: |
+          echo "Commit ejecutado:"
+          git rev-parse --short HEAD
+
+          echo "Directorio actual:"
+          pwd
+
+          echo "Archivos de la raiz:"
+          ls -la
+
+          echo "Archivos de api:"
+          ls -la api/
+
+          echo "Verificando package.json:"
+          test -f api/package.json && echo "EXISTE" || echo "NO EXISTE"
+
+          echo "Verificando package-lock.json:"
+          test -f api/package-lock.json && echo "EXISTE" || echo "NO EXISTE"
+
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
