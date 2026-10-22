@@ -1,5 +1,5 @@
 
-name: Build and deploy SRM Aerosan API
+name: Build and deploy Node.js project to Azure Function App - srm-aerosan-api
 
 on:
   push:
@@ -11,6 +11,8 @@ on:
   workflow_dispatch:
 
 env:
+  AZURE_FUNCTIONAPP_NAME: srm-aerosan-api
+  AZURE_FUNCTIONAPP_PROJECT_PATH: api
   NODE_VERSION: '22'
 
 jobs:
@@ -19,42 +21,48 @@ jobs:
     permissions:
       contents: read
 
+    defaults:
+      run:
+        shell: bash
+        working-directory: api
+
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
-
-      - name: Diagnosticar estructura del repositorio
-        run: |
-          echo "Commit ejecutado:"
-          git rev-parse --short HEAD
-
-          echo "Directorio actual:"
-          pwd
-
-          echo "Archivos de la raiz:"
-          ls -la
-
-          echo "Archivos de api:"
-          ls -la api/
-
-          echo "Verificando package.json:"
-          test -f api/package.json && echo "EXISTE" || echo "NO EXISTE"
-
-          echo "Verificando package-lock.json:"
-          test -f api/package-lock.json && echo "EXISTE" || echo "NO EXISTE"
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Verificar estructura del proyecto
+        run: |
+          echo "Directorio:"
+          pwd
+          echo "Archivos del proyecto:"
+          ls -la
+          test -f package.json
+          test -f package-lock.json
+          test -f host.json
+          test -d src/functions
+          echo "Estructura correcta."
+
       - name: Instalar dependencias
-        working-directory: api
         run: npm ci --omit=dev
 
-      - name: Preparar paquete
-        working-directory: api
-        run: zip -r ../release.zip .
+      - name: Preparar paquete de despliegue
+        run: |
+          zip -r ../release.zip . \
+            -x "local.settings.json" \
+               ".git/*" \
+               ".vscode/*"
+
+      - name: Verificar paquete
+        working-directory: .
+        run: |
+          echo "Contenido de release.zip:"
+          unzip -l release.zip | head -80
+          unzip -l release.zip | grep -E 'host.json|package.json|src/functions'
 
       - name: Guardar paquete
         uses: actions/upload-artifact@v4
@@ -74,6 +82,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: node-app
+          path: .
 
       - name: Iniciar sesion en Azure
         uses: azure/login@v2
@@ -85,5 +94,5 @@ jobs:
       - name: Publicar API en Azure Functions
         uses: Azure/functions-action@v1
         with:
-          app-name: srm-aerosan-api
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: release.zip
