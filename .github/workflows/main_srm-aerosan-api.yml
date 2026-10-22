@@ -14,6 +14,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    permissions:
+      id-token: write
+      contents: read
+
     steps:
       - name: Descargar codigo
         uses: actions/checkout@v4
@@ -23,15 +27,29 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Verificar proyecto
+        working-directory: api
+        run: |
+          test -f host.json
+          test -f package.json
+          test -f package-lock.json
+          test -d src/functions
+          echo "Estructura correcta"
+
       - name: Instalar dependencias
         working-directory: api
         run: npm ci --omit=dev
 
-      - name: Publicar Azure Functions
+      - name: Iniciar sesion en Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_7D810F75670B496491EBB9BD1E4FAF1A }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B3F094D157104EDABE49C66E1E1F1E79 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_747188555D404A5DA4F2048E20E72321 }}
+
+      - name: Publicar API
         uses: Azure/functions-action@v1
         with:
           app-name: srm-aerosan-api
           package: api
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
-          sku: flexconsumption
           remote-build: true
