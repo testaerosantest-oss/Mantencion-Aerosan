@@ -1,8 +1,12 @@
+```json
 {
   "name": "srm-aerosan-api",
   "version": "1.0.0",
   "private": true,
   "main": "src/functions/*.js",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "start": "func start"
   },
@@ -17,3 +21,4 @@
     "azurite": "^3.37.0"
   }
 }
+```
