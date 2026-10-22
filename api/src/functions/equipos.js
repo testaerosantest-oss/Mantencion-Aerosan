@@ -10,6 +10,7 @@ app.http('equipos', {
   handler: async (request, context) => {
     try {
       context.log('Iniciando solicitud de API equipos');
+
       const pool = await getPool();
 
       // CONSULTAR EQUIPOS
@@ -43,7 +44,18 @@ app.http('equipos', {
       if (request.method === 'POST') {
         context.log('Registrando equipo nuevo');
 
-        const body = await request.json();
+        let body;
+
+        try {
+          body = await request.json();
+        } catch {
+          return {
+            status: 400,
+            jsonBody: {
+              error: 'El cuerpo de la solicitud debe contener JSON válido.'
+            }
+          };
+        }
 
         const {
           Codigo,
@@ -51,7 +63,7 @@ app.http('equipos', {
           Ubicacion,
           Sector,
           Estado
-        } = body;
+        } = body || {};
 
         if (
           typeof Codigo !== 'string' ||
@@ -73,17 +85,23 @@ app.http('equipos', {
           .input(
             'Ubicacion',
             sql.NVarChar,
-            Ubicacion ? String(Ubicacion).trim() : null
+            Ubicacion != null && String(Ubicacion).trim()
+              ? String(Ubicacion).trim()
+              : null
           )
           .input(
             'Sector',
             sql.NVarChar,
-            Sector ? String(Sector).trim() : null
+            Sector != null && String(Sector).trim()
+              ? String(Sector).trim()
+              : null
           )
           .input(
             'Estado',
             sql.NVarChar,
-            Estado ? String(Estado).trim() : 'Activo'
+            Estado != null && String(Estado).trim()
+              ? String(Estado).trim()
+              : 'Activo'
           )
           .query(`
             INSERT INTO dbo.Equipos
@@ -100,13 +118,15 @@ app.http('equipos', {
               (@Codigo, @Nombre, @Ubicacion, @Sector, @Estado);
           `);
 
+        const equipoCreado = result.recordset[0];
+
         context.log(
-          `Equipo registrado. ID: ${result.recordset[0].EquipoID}`
+          `Equipo registrado. ID: ${equipoCreado.EquipoID}`
         );
 
         return {
           status: 201,
-          jsonBody: result.recordset[0]
+          jsonBody: equipoCreado
         };
       }
 
@@ -118,13 +138,11 @@ app.http('equipos', {
       };
 
     } catch (error) {
-      // DETALLE TEMPORAL PARA DIAGNÓSTICO
       context.error('Error en API equipos:', {
         message: error.message,
         code: error.code,
         number: error.number,
-        state: error.state,
-        stack: error.stack
+        state: error.state
       });
 
       return {
