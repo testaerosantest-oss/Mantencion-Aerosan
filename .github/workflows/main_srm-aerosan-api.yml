@@ -1,5 +1,5 @@
 
-name: Build and deploy Node.js project to Azure Function App - srm-aerosan-api
+name: Deploy SRM Aerosan API
 
 on:
   push:
@@ -10,21 +10,9 @@ on:
       - '.github/workflows/main_srm-aerosan-api.yml'
   workflow_dispatch:
 
-env:
-  AZURE_FUNCTIONAPP_NAME: srm-aerosan-api
-  AZURE_FUNCTIONAPP_PROJECT_PATH: api
-  NODE_VERSION: '22'
-
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    defaults:
-      run:
-        shell: bash
-        working-directory: api
 
     steps:
       - name: Descargar codigo
@@ -33,66 +21,17 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Verificar estructura del proyecto
-        run: |
-          echo "Directorio:"
-          pwd
-          echo "Archivos del proyecto:"
-          ls -la
-          test -f package.json
-          test -f package-lock.json
-          test -f host.json
-          test -d src/functions
-          echo "Estructura correcta."
+          node-version: '22'
 
       - name: Instalar dependencias
+        working-directory: api
         run: npm ci --omit=dev
 
-      - name: Preparar paquete de despliegue
-        run: |
-          zip -r ../release.zip . \
-            -x "local.settings.json" \
-               ".git/*" \
-               ".vscode/*"
-
-      - name: Verificar paquete
-        working-directory: .
-        run: |
-          echo "Contenido de release.zip:"
-          unzip -l release.zip | head -80
-          unzip -l release.zip | grep -E 'host.json|package.json|src/functions'
-
-      - name: Guardar paquete
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Descargar paquete
-        uses: actions/download-artifact@v4
-        with:
-          name: node-app
-          path: .
-
-      - name: Iniciar sesion en Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_7D810F75670B496491EBB9BD1E4FAF1A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B3F094D157104EDABE49C66E1E1F1E79 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_747188555D404A5DA4F2048E20E72321 }}
-
-      - name: Publicar API en Azure Functions
+      - name: Publicar Azure Functions
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: release.zip
+          app-name: srm-aerosan-api
+          package: api
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          sku: flexconsumption
+          remote-build: true
