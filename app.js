@@ -1,13 +1,12 @@
-```javascript
+
 (() => {
   "use strict";
 
   // =========================================================
-  // CONFIGURACIÓN
+  // CONFIGURACION
   // =========================================================
   const cfg = window.SRM_CONFIG || {
-    API_BASE:
-      "https://srm-aerosan-api-e8etf6hmegfga5an.brazilsouth-01.azurewebsites.net/api",
+    API_BASE: "https://srm-aerosan-api-e8etf6hmegfga5an.brazilsouth-01.azurewebsites.net/api",
     LINKS: {}
   };
 
@@ -28,37 +27,40 @@
   // UTILIDADES
   // =========================================================
   function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>"']/g, c => ({
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
       "&": "&amp;",
       "<": "&lt;",
       ">": "&gt;",
       '"': "&quot;",
       "'": "&#39;"
-    }[c]));
+    })[character]);
   }
 
   function dateText(value) {
     if (!value) return "—";
 
-    const s = String(value).slice(0, 10);
+    const date = String(value).slice(0, 10);
 
-    return /^\d{4}-\d{2}-\d{2}$/.test(s)
-      ? s.split("-").reverse().join("-")
-      : s;
+    return /^\d{4}-\d{2}-\d{2}$/.test(date)
+      ? date.split("-").reverse().join("-")
+      : date;
   }
 
   function badge(status) {
     const value = status || "Sin estado";
-    const cls = String(value)
-      .toLowerCase()
-      .replace(/\s+/g, "-");
+    const cls = String(value).toLowerCase().replace(/\s+/g, "-");
 
     return `<span class="badge ${escapeHtml(cls)}">${escapeHtml(value)}</span>`;
   }
 
   function showNotice(message, isError = false) {
     const el = $("notice");
-    if (!el) return;
+
+    if (!el) {
+      if (isError) console.error(message);
+      else console.log(message);
+      return;
+    }
 
     el.textContent = message;
     el.classList.remove("hidden");
@@ -75,11 +77,17 @@
     if (el) el.textContent = message;
   }
 
+  function setText(id, value) {
+    const el = $(id);
+    if (el) el.textContent = value ?? "";
+  }
+
   // =========================================================
-  // CONEXIÓN A AZURE FUNCTIONS
+  // CONEXION A AZURE FUNCTIONS
   // =========================================================
   async function api(path, options = {}) {
     const headers = {
+      Accept: "application/json",
       ...(options.body ? { "Content-Type": "application/json" } : {}),
       ...(options.headers || {})
     };
@@ -96,10 +104,10 @@
         headers
       });
     } catch (error) {
-      console.error("No se pudo conectar con la API:", error);
+      console.error("Error de conexion con Azure Functions:", error);
 
       throw new Error(
-        "No se pudo conectar con Azure Functions. Verifica la dirección de la API y la configuración CORS."
+        "No se pudo conectar con Azure Functions. Comprueba CORS y la direccion de la API."
       );
     }
 
@@ -127,23 +135,27 @@
     return data;
   }
 
+  function rowsFrom(response) {
+    if (Array.isArray(response)) return response;
+    if (Array.isArray(response?.items)) return response.items;
+    if (Array.isArray(response?.value)) return response.value;
+    return [];
+  }
+
   // =========================================================
-  // VISTAS Y NAVEGACIÓN
+  // VISTAS Y NAVEGACION
   // =========================================================
   function setView() {
     $("loginView")?.classList.add("hidden");
     $("appView")?.classList.remove("hidden");
 
-    if ($("currentUser")) {
-      $("currentUser").textContent = user;
-    }
-
+    setText("currentUser", user);
     $("logoutBtn")?.classList.add("hidden");
   }
 
   function logout() {
     setView();
-    showNotice("El inicio de sesión está desactivado en el modo de prueba.");
+    showNotice("El inicio de sesion esta desactivado en el modo de prueba.");
   }
 
   function navigate(section) {
@@ -152,7 +164,12 @@
     });
 
     const target = $(`section-${section}`);
-    if (target) target.classList.remove("hidden");
+
+    if (target) {
+      target.classList.remove("hidden");
+    } else {
+      console.warn(`No se encontro la seccion section-${section}`);
+    }
 
     document.querySelectorAll(".nav-item").forEach(el => {
       el.classList.toggle("active", el.dataset.section === section);
@@ -162,14 +179,13 @@
       dashboard: "Inicio",
       equipos: "Equipos",
       mantenciones: "Mantenciones",
-      ordenes: "Órdenes de trabajo",
+      ordenes: "Ordenes de trabajo",
       reportes: "Reportes"
     };
 
-    if ($("pageTitle")) {
-      $("pageTitle").textContent = titles[section] || "Inicio";
-    }
+    setText("pageTitle", titles[section] || "Inicio");
 
+    if (section === "dashboard") renderDashboard();
     if (section === "equipos") renderEquipment();
     if (section === "mantenciones") renderMaintenance();
     if (section === "ordenes") renderOrders();
@@ -188,41 +204,40 @@
       if (!el) return;
 
       const url = cfg.LINKS?.[key] || "";
-      el.href = url || "#";
 
-      if (!url) {
+      if (url && /^https?:\/\//i.test(url)) {
+        el.href = url;
+        el.target = "_blank";
+        el.rel = "noopener noreferrer";
+      } else {
+        el.href = "#";
+
         el.addEventListener("click", event => {
           event.preventDefault();
-
-          showNotice(
-            `Falta configurar la URL de ${
-              el.querySelector("b")?.textContent || key
-            }.`,
-            true
-          );
+          showNotice(`La URL de ${key} todavia no esta configurada.`, true);
         });
       }
     });
   }
 
   // =========================================================
-  // CARGAR EQUIPOS, MANTENCIONES Y ÓRDENES
+  // CARGAR DATOS
   // =========================================================
   async function loadAll() {
-    try {
-      const [eq, mt, ot] = await Promise.all([
-        api("/equipos"),
-        api("/mantenciones"),
-        api("/ordenes")
-      ]);
+    const results = await Promise.allSettled([
+      api("/equipos"),
+      api("/mantenciones"),
+      api("/ordenes")
+    ]);
 
-      const eqRows = Array.isArray(eq) ? eq : (eq?.items || []);
-      const mtRows = Array.isArray(mt) ? mt : (mt?.items || []);
-      const otRows = Array.isArray(ot) ? ot : (ot?.items || []);
+    let errors = 0;
 
-      equipos = eqRows.map(e => ({
-        id: e.EquipoID ?? e.id,
-        numero_equipo: e.Codigo ?? e.numero_equipo ?? "",
+    if (results[0].status === "fulfilled") {
+      const rows = rowsFrom(results[0].value);
+
+      equipos = rows.map(e => ({
+        id: e.EquipoID ?? e.id ?? e.equipo_id,
+        numero_equipo: e.Codigo ?? e.numero_equipo ?? e.codigo ?? "",
         nombre: e.Nombre ?? e.nombre ?? "",
         ubicacion: e.Ubicacion ?? e.ubicacion ?? "",
         sector: e.Sector ?? e.sector ?? "",
@@ -233,27 +248,40 @@
           e.ProximaMantencion ??
           e.proxima_mantencion ??
           e.FechaProgramada ??
+          e.fecha_programada ??
           null,
         observaciones: e.Observaciones ?? e.observaciones ?? ""
       }));
+    } else {
+      errors++;
+      console.error("Error cargando equipos:", results[0].reason);
+    }
 
-      mantenciones = mtRows.map(m => ({
+    if (results[1].status === "fulfilled") {
+      const rows = rowsFrom(results[1].value);
+
+      mantenciones = rows.map(m => ({
         id: m.MantencionID ?? m.id,
         equipo_id: m.EquipoID ?? m.equipo_id,
         numero_equipo: m.Codigo ?? m.numero_equipo ?? "",
         equipo_nombre: m.NombreEquipo ?? m.equipo_nombre ?? "",
         tipo: m.TipoMantencion ?? m.tipo ?? "",
-        fecha_programada:
-          m.FechaProgramada ?? m.fecha_programada ?? null,
-        fecha_realizada:
-          m.FechaRealizada ?? m.fecha_realizada ?? null,
+        fecha_programada: m.FechaProgramada ?? m.fecha_programada ?? null,
+        fecha_realizada: m.FechaRealizada ?? m.fecha_realizada ?? null,
         estado: m.Estado ?? m.estado ?? "",
         detalle: m.Descripcion ?? m.detalle ?? "",
         responsable: m.Responsable ?? m.responsable ?? "",
         observaciones: m.Observaciones ?? m.observaciones ?? ""
       }));
+    } else {
+      errors++;
+      console.error("Error cargando mantenciones:", results[1].reason);
+    }
 
-      ordenes = otRows.map(o => ({
+    if (results[2].status === "fulfilled") {
+      const rows = rowsFrom(results[2].value);
+
+      ordenes = rows.map(o => ({
         id: o.OrdenID ?? o.id,
         numero_orden: o.OrdenID ?? o.numero_orden ?? "",
         equipo_id: o.EquipoID ?? o.equipo_id,
@@ -272,19 +300,23 @@
           o.fecha_creacion ??
           null
       }));
+    } else {
+      errors++;
+      console.error("Error cargando ordenes:", results[2].reason);
+    }
 
-      renderDashboard();
-      renderEquipment();
-      renderMaintenance();
-      renderOrders();
-      fillEquipmentSelects();
-      renderReports();
+    renderDashboard();
+    renderEquipment();
+    renderMaintenance();
+    renderOrders();
+    fillEquipmentSelects();
+    renderReports();
 
-    } catch (error) {
-      console.error("Error cargando información de la API:", error);
-
+    if (errors === 0) {
+      showNotice("Datos actualizados correctamente.");
+    } else {
       showNotice(
-        `No se pudieron cargar los datos desde la API: ${error.message}. El panel permanece disponible.`,
+        `No se pudieron cargar ${errors} de las 3 secciones. Revisa la API y CORS.`,
         true
       );
     }
@@ -294,27 +326,28 @@
   // PANEL PRINCIPAL
   // =========================================================
   function renderDashboard() {
-    if ($("statEquipos")) {
-      $("statEquipos").textContent = equipos.length;
-    }
+    setText("statEquipos", equipos.length);
 
-    if ($("statOperativos")) {
-      $("statOperativos").textContent = equipos.filter(e =>
+    setText(
+      "statOperativos",
+      equipos.filter(e =>
         ["Activo", "Operativo"].includes(e.estado)
-      ).length;
-    }
+      ).length
+    );
 
-    if ($("statMantencion")) {
-      $("statMantencion").textContent = equipos.filter(e =>
-        ["En mantención", "En mantenimiento"].includes(e.estado)
-      ).length;
-    }
+    setText(
+      "statMantencion",
+      equipos.filter(e =>
+        ["En mantencion", "En mantenimiento"].includes(e.estado)
+      ).length
+    );
 
-    if ($("statOrdenes")) {
-      $("statOrdenes").textContent = ordenes.filter(o =>
+    setText(
+      "statOrdenes",
+      ordenes.filter(o =>
         ["Pendiente", "En proceso", "Abierta"].includes(o.estado)
-      ).length;
-    }
+      ).length
+    );
 
     const rows = equipos.slice(0, 6).map(e => `
       <tr>
@@ -326,17 +359,19 @@
       </tr>
     `).join("");
 
-    if ($("recentEquipment")) {
-      $("recentEquipment").innerHTML = rows ||
+    const recent = $("recentEquipment");
+
+    if (recent) {
+      recent.innerHTML = rows ||
         `<tr><td colspan="5" class="empty">No hay equipos cargados.</td></tr>`;
     }
   }
 
   // =========================================================
-  // INVENTARIO DE EQUIPOS
+  // EQUIPOS
   // =========================================================
   function renderEquipment() {
-    const q = ($("equipmentSearch")?.value || "").toLowerCase();
+    const query = ($("equipmentSearch")?.value || "").toLowerCase().trim();
     const status = $("statusFilter")?.value || "";
 
     const filtered = equipos.filter(e => {
@@ -352,72 +387,73 @@
         e.marca,
         e.modelo
       ].some(value =>
-        String(value || "").toLowerCase().includes(q)
+        String(value || "").toLowerCase().includes(query)
       );
 
       return matchesStatus && matchesSearch;
     });
 
-    if ($("equipmentRows")) {
-      $("equipmentRows").innerHTML = filtered.map(e => `
-        <tr>
-          <td><b>${escapeHtml(e.numero_equipo)}</b></td>
-          <td>${escapeHtml(e.nombre)}</td>
-          <td>${escapeHtml(
-            [e.marca, e.modelo].filter(Boolean).join(" / ") || "—"
-          )}</td>
-          <td>${escapeHtml(e.ubicacion || "—")}</td>
-          <td>${badge(e.estado)}</td>
-          <td>${dateText(e.proxima_mantencion)}</td>
-          <td>
-            <button
-              class="secondary edit-equipment"
-              data-id="${escapeHtml(e.id)}"
-              type="button"
-            >Ver</button>
-          </td>
-        </tr>
-      `).join("") || `
-        <tr><td colspan="7" class="empty">No hay equipos para mostrar.</td></tr>
-      `;
+    const table = $("equipmentRows");
+    if (!table) return;
 
-      document.querySelectorAll(".edit-equipment").forEach(button => {
-        button.addEventListener("click", () => {
-          const equipo = equipos.find(e =>
-            String(e.id) === button.dataset.id
-          );
+    table.innerHTML = filtered.map(e => `
+      <tr>
+        <td><b>${escapeHtml(e.numero_equipo)}</b></td>
+        <td>${escapeHtml(e.nombre)}</td>
+        <td>${escapeHtml(
+          [e.marca, e.modelo].filter(Boolean).join(" / ") || "—"
+        )}</td>
+        <td>${escapeHtml(e.ubicacion || "—")}</td>
+        <td>${badge(e.estado)}</td>
+        <td>${dateText(e.proxima_mantencion)}</td>
+        <td>
+          <button class="secondary edit-equipment"
+                  data-id="${escapeHtml(e.id)}"
+                  type="button">Ver</button>
+        </td>
+      </tr>
+    `).join("") || `
+      <tr><td colspan="7" class="empty">No hay equipos para mostrar.</td></tr>
+    `;
 
-          if (equipo) {
-            openEquipment(equipo);
-          }
-        });
+    table.querySelectorAll(".edit-equipment").forEach(button => {
+      button.addEventListener("click", () => {
+        const equipo = equipos.find(e =>
+          String(e.id) === button.dataset.id
+        );
+
+        if (equipo) openEquipment(equipo);
       });
-    }
+    });
   }
 
   function openEquipment(e = null) {
-    $("equipmentForm")?.reset();
+    const form = $("equipmentForm");
+    form?.reset();
+
     showFormError("equipmentFormError", "");
 
-    $("equipmentDialogTitle").textContent =
-      e ? "Detalle del equipo" : "Nuevo equipo";
+    setText(
+      "equipmentDialogTitle",
+      e ? "Detalle del equipo" : "Nuevo equipo"
+    );
 
-    $("equipmentId").value = e?.id ?? "";
-    $("eqNumber").value = e?.numero_equipo ?? "";
-    $("eqName").value = e?.nombre ?? "";
-    $("eqBrand").value = e?.marca ?? "";
-    $("eqModel").value = e?.modelo ?? "";
-    $("eqLocation").value = e?.ubicacion ?? "";
-    $("eqStatus").value = e?.estado ?? "Operativo";
+    if ($("equipmentId")) $("equipmentId").value = e?.id ?? "";
+    if ($("eqNumber")) $("eqNumber").value = e?.numero_equipo ?? "";
+    if ($("eqName")) $("eqName").value = e?.nombre ?? "";
+    if ($("eqBrand")) $("eqBrand").value = e?.marca ?? "";
+    if ($("eqModel")) $("eqModel").value = e?.modelo ?? "";
+    if ($("eqLocation")) $("eqLocation").value = e?.ubicacion ?? "";
+    if ($("eqStatus")) {
+      $("eqStatus").value = e?.estado ?? "Operativo";
+    }
+    if ($("eqNext")) {
+      $("eqNext").value = e?.proxima_mantencion
+        ? String(e.proxima_mantencion).slice(0, 10)
+        : "";
+    }
+    if ($("eqNotes")) $("eqNotes").value = e?.observaciones ?? "";
 
-    $("eqNext").value = e?.proxima_mantencion
-      ? String(e.proxima_mantencion).slice(0, 10)
-      : "";
-
-    $("eqNotes").value = e?.observaciones ?? "";
-
-    // La API actual aún no tiene PUT para editar.
-    // En modo consulta, los campos se muestran deshabilitados.
     const readOnly = Boolean(e);
 
     [
@@ -433,8 +469,7 @@
       if ($(id)) $(id).disabled = readOnly;
     });
 
-    const submitButton = $("equipmentForm")
-      ?.querySelector('button[type="submit"]');
+    const submitButton = form?.querySelector('button[type="submit"]');
 
     if (submitButton) {
       submitButton.classList.toggle("hidden", readOnly);
@@ -445,32 +480,23 @@
 
   async function saveEquipment(event) {
     event.preventDefault();
+
     showFormError("equipmentFormError", "");
 
-    const id = $("equipmentId").value;
-
-    if (id) {
-      showFormError(
-        "equipmentFormError",
-        "La edición aún no está disponible. Por ahora puedes consultar el equipo y registrar equipos nuevos."
-      );
-      return;
-    }
-
     const body = {
-      Codigo: $("eqNumber").value.trim(),
-      Nombre: $("eqName").value.trim(),
-      Ubicacion: $("eqLocation").value.trim() || null,
+      Codigo: $("eqNumber")?.value.trim() || "",
+      Nombre: $("eqName")?.value.trim() || "",
+      Ubicacion: $("eqLocation")?.value.trim() || null,
       Sector: null,
-      Estado: $("eqStatus").value === "Operativo"
+      Estado: $("eqStatus")?.value === "Operativo"
         ? "Activo"
-        : $("eqStatus").value
+        : ($("eqStatus")?.value || "Activo")
     };
 
     if (!body.Codigo || !body.Nombre) {
       showFormError(
         "equipmentFormError",
-        "Completa el número y el nombre del equipo."
+        "Completa el numero y el nombre del equipo."
       );
       return;
     }
@@ -486,14 +512,9 @@
       await loadAll();
 
       showNotice("Equipo registrado correctamente.");
-
     } catch (error) {
       console.error("Error registrando equipo:", error);
-
-      showFormError(
-        "equipmentFormError",
-        error.message
-      );
+      showFormError("equipmentFormError", error.message);
     }
   }
 
@@ -501,9 +522,10 @@
   // MANTENCIONES
   // =========================================================
   function renderMaintenance() {
-    if (!$("maintenanceRows")) return;
+    const table = $("maintenanceRows");
+    if (!table) return;
 
-    $("maintenanceRows").innerHTML = mantenciones.map(m => `
+    table.innerHTML = mantenciones.map(m => `
       <tr>
         <td>${escapeHtml(
           [m.numero_equipo, m.equipo_nombre].filter(Boolean).join(" · ") || "—"
@@ -521,7 +543,7 @@
 
   function fillEquipmentSelects() {
     const options = equipos
-      .filter(e => !["Retirado"].includes(e.estado))
+      .filter(e => e.estado !== "Retirado")
       .map(e => `
         <option value="${escapeHtml(e.id)}">
           ${escapeHtml(e.numero_equipo)} — ${escapeHtml(e.nombre)}
@@ -544,17 +566,18 @@
 
     showFormError(
       "maintenanceFormError",
-      "El registro de mantenciones todavía no está implementado en la API. No se guardó ningún dato."
+      "El registro de mantenciones aun no esta implementado en la API. No se guardo ningun dato."
     );
   }
 
   // =========================================================
-  // ÓRDENES DE TRABAJO
+  // ORDENES DE TRABAJO
   // =========================================================
   function renderOrders() {
-    if (!$("orderRows")) return;
+    const table = $("orderRows");
+    if (!table) return;
 
-    $("orderRows").innerHTML = ordenes.map(o => `
+    table.innerHTML = ordenes.map(o => `
       <tr>
         <td><b>${escapeHtml(o.numero_orden)}</b></td>
         <td>${escapeHtml(
@@ -566,7 +589,7 @@
         <td>${dateText(o.fecha_creacion)}</td>
       </tr>
     `).join("") || `
-      <tr><td colspan="6" class="empty">No hay órdenes registradas.</td></tr>
+      <tr><td colspan="6" class="empty">No hay ordenes registradas.</td></tr>
     `;
   }
 
@@ -575,8 +598,41 @@
 
     showFormError(
       "orderFormError",
-      "El registro de órdenes todavía no está implementado en la API. No se guardó ningún dato."
+      "El registro de ordenes aun no esta implementado en la API. No se guardo ningun dato."
     );
+  }
+
+  // =========================================================
+  // REPORTES
+  // =========================================================
+  function renderReports() {
+    const total = equipos.length;
+    const activos = equipos.filter(e =>
+      ["Activo", "Operativo"].includes(e.estado)
+    ).length;
+    const enMantencion = equipos.filter(e =>
+      ["En mantencion", "En mantenimiento"].includes(e.estado)
+    ).length;
+    const totalMantenciones = mantenciones.length;
+    const totalOrdenes = ordenes.length;
+
+    setText("reportTotalEquipos", total);
+    setText("reportEquiposActivos", activos);
+    setText("reportEquiposMantencion", enMantencion);
+    setText("reportTotalMantenciones", totalMantenciones);
+    setText("reportTotalOrdenes", totalOrdenes);
+
+    const summary = $("reportSummary");
+
+    if (summary) {
+      summary.innerHTML = `
+        <p><strong>Equipos registrados:</strong> ${total}</p>
+        <p><strong>Equipos activos:</strong> ${activos}</p>
+        <p><strong>Equipos en mantencion:</strong> ${enMantencion}</p>
+        <p><strong>Mantenciones registradas:</strong> ${totalMantenciones}</p>
+        <p><strong>Ordenes de trabajo:</strong> ${totalOrdenes}</p>
+      `;
+    }
   }
 
   // =========================================================
@@ -584,24 +640,32 @@
   // =========================================================
   $("loginForm")?.addEventListener("submit", event => {
     event.preventDefault();
+    setView();
+    showNotice("Modo de prueba activo.");
   });
 
-  $("logoutBtn")?.addEventListener("click", logout);
+  $("logoutBtn")?.addEventListener("click", event => {
+    event.preventDefault();
+    logout();
+  });
 
   document.querySelectorAll(".nav-item").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
       navigate(button.dataset.section);
     });
   });
 
   document.querySelectorAll("[data-go]").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
       navigate(button.dataset.go);
     });
   });
 
   document.querySelectorAll("[data-close]").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", event => {
+      event.preventDefault();
       $(button.dataset.close)?.close();
     });
   });
@@ -634,12 +698,15 @@
   $("statusFilter")?.addEventListener("change", renderEquipment);
 
   // =========================================================
-  // INICIALIZACIÓN
+  // INICIALIZACION
   // =========================================================
   setLinks();
   setView();
   navigate("dashboard");
-  loadAll();
+
+  loadAll().catch(error => {
+    console.error("Error inesperado al iniciar la aplicacion:", error);
+    showNotice("No se pudieron cargar los datos. Puedes seguir navegando.", true);
+  });
 
 })();
-```
